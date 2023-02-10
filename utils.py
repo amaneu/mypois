@@ -1,5 +1,7 @@
 import os
 from datetime import date
+import re
+import io
 
 def create_update_dot_txt(filename,name=None,version=None):
   '''
@@ -198,8 +200,22 @@ def read_geo_gpx(source):
 
   print("Parsing GPX %s" % (source))
 
+  # Remove extensions
+  content_without_extensions = None
+
+  with open(source, 'r') as f:
+    content = f.read()
+    content_without_extensions = re.sub('<extensions>.*?<\/extensions>', '', content, flags=re.M | re.DOTALL)
+
+  if content_without_extensions is None:
+    raise Exception('Failed to read gpx file %s' % source)
+
+  gpx_file = io.StringIO()
+  gpx_file.write(content_without_extensions)
+  gpx_file.seek(0)
+
   # Read in the XML and strip all namespaces
-  it = ET.iterparse(source)
+  it = ET.iterparse(gpx_file)
   for _, el in it:
       if '}' in el.tag:
           el.tag = el.tag.split('}', 1)[1]  # strip all namespaces
